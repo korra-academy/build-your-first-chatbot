@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your First Chatbot — one file, no API keys | Korra.Bot</title>
+<meta name="description" content="A complete rule-based chatbot in one HTML file. No installs, no API keys, works offline. Read the code, edit the brain, learn how chatbots work.">
+<style>
+  :root { --bg:#0F3437; --panel:#0b2628; --me:#7DD0C8; --bot:#173F43; --ink:#EAF5F4; }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--ink);
+         display:flex; flex-direction:column; height:100dvh; }
+  header { padding:10px 16px; font-weight:700; } header a { color:var(--me); }
+  #chat { flex:1; overflow-y:auto; padding:12px 16px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:75%; padding:9px 13px; border-radius:14px; line-height:1.35; white-space:pre-wrap; }
+  .bot { background:var(--bot); align-self:flex-start; border-bottom-left-radius:4px; }
+  .me  { background:var(--me); color:#062a2c; align-self:flex-end; border-bottom-right-radius:4px; }
+  form { display:flex; gap:8px; padding:12px 16px; background:var(--panel); }
+  input { flex:1; padding:11px; border-radius:10px; border:0; font:inherit; }
+  button { padding:11px 18px; border:0; border-radius:10px; background:var(--me); color:#062a2c; font-weight:700; cursor:pointer; }
+</style>
+</head>
+<body>
+<header>🤖 Korra Bot — a chatbot you can read &nbsp;·&nbsp; <a href="https://korra.bot/">korra.bot</a></header>
+<div id="chat"></div>
+<form id="f"><input id="box" autocomplete="off" placeholder="Say hello…" autofocus><button>Send</button></form>
+
+<script>
+// ============================================================================
+//  THE BRAIN. This is the entire intelligence of this bot — a list of rules.
+//  Each rule: if the user's message contains one of the keywords,
+//  the bot answers with one of the replies (picked at random).
+//  ADD YOUR OWN RULES. Save the file, refresh the page, talk to your bot.
+// ============================================================================
+const BRAIN = [
+  { keywords: ["hello", "hi", "hey", "morning", "afternoon"],
+    replies: ["Hello! I'm a rule-based bot — every word I say is written in this file. Try asking what I am, or teach me a new rule.",
+              "Hey! Ask me how I work — I have no secrets, literally."] },
+
+  { keywords: ["how do you work", "how it works", "what are you", "are you ai", "are you real"],
+    replies: ["I match keywords in your message against a list called BRAIN and pick a canned reply. No neural network, no internet — open this file in a text editor and you can read all of me.",
+              "I'm a rule-based chatbot, like ELIZA from 1966. Modern AI (LLMs) predicts words instead of matching rules — but this is where every bot builder should start."] },
+
+  { keywords: ["name"],
+    replies: ["I'm Korra Bot. What's your name? Tell me like this: \"my name is Alex\"."] },
+
+  { keywords: ["my name is"],
+    replies: ["__REMEMBER_NAME__"] },   // special token handled in the code below
+
+  { keywords: ["joke", "funny"],
+    replies: ["Why do programmers prefer dark mode? Because light attracts bugs. 🐛",
+              "There are only 10 types of people: those who understand binary and those who don't."] },
+
+  { keywords: ["learn", "course", "tutor", "teach me", "lesson"],
+    replies: ["Learning to build bots is very teachable — start by adding rules to me, then try the prompts in github.com/korra-academy/vibe-coding-starter-prompts. Humans teach this live at korra.bot too."] },
+
+  { keywords: ["korra"],
+    replies: ["Korra Academy is an online academy with eight doors — Kids, Study, Career, Business, Tutor, Training, Bot and Codes. I live behind the Bot door: korra.bot 🤖"] },
+
+  { keywords: ["llm", "chatgpt", "claude", "gpt", "real ai"],
+    replies: ["LLMs like Claude or ChatGPT are trained neural networks that predict text — far more flexible than my keyword rules, but they need servers and API keys. The last section of this file explains how I'd be upgraded to one."] },
+
+  { keywords: ["bye", "goodbye", "see you"],
+    replies: ["Bye! Before you go: open this file and add one rule of your own. That's your first program. 👋"] },
+];
+
+// If nothing matched, the bot admits it — honesty is a feature:
+const FALLBACKS = [
+  "I don't have a rule for that yet. Open this file, find BRAIN, and teach me!",
+  "No matching rule found — that's exactly the limit of rule-based bots. Add a keyword for it and I'll learn.",
+  "Beats me! My brain is only " + BRAIN.length + " rules long. You could make it " + (BRAIN.length + 1) + "…"
+];
+
+// ============================================================================
+//  THE MACHINERY — how messages flow. Shorter than you expected, right?
+// ============================================================================
+const chat = document.getElementById("chat");
+let userName = null;   // the bot's entire "memory" is this one variable
+
+function say(text, who) {
+  const div = document.createElement("div");
+  div.className = "msg " + who;
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function reply(raw) {
+  const msg = raw.toLowerCase();
+  for (const rule of BRAIN) {
+    if (rule.keywords.some(k => msg.includes(k))) {
+      let out = rule.replies[Math.floor(Math.random() * rule.replies.length)];
+      if (out === "__REMEMBER_NAME__") {           // the "memory" trick
+        userName = raw.slice(msg.indexOf("my name is") + 11).trim().split(" ")[0] || "friend";
+        out = "Nice to meet you, " + userName + "! I'll remember that until you refresh the page — my memory is one variable.";
+      }
+      if (userName && Math.random() < 0.25) out += " (" + userName + ")";
+      return out;
+    }
+  }
+  return FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)];
+}
+
+document.getElementById("f").addEventListener("submit", e => {
+  e.preventDefault();
+  const box = document.getElementById("box");
+  const text = box.value.trim();
+  if (!text) return;
+  say(text, "me");
+  box.value = "";
+  setTimeout(() => say(reply(text), "bot"), 350);  // small delay feels more alive
+});
+
+say("Hi! I'm a chatbot in one file — no API, no internet, no secrets. Ask me how I work.", "bot");
+
+// ============================================================================
+//  UPGRADING ME TO A REAL LLM (read this, don't do it in this file)
+//  To make me as smart as Claude/ChatGPT you would replace reply() with a
+//  network request to an LLM API. Two things change fundamentally:
+//    1. You need an API key — and keys must NEVER live in a public HTML file,
+//       so a small server sits between the page and the AI to keep it secret.
+//    2. The bot stops being fully predictable — you gain flexibility and give
+//       up the guarantee of knowing every possible answer in advance.
+//  That trade-off — capability vs control — is the core idea of applied AI,
+//  and it's what we teach live at https://korra.bot/
+// ============================================================================
+</script>
+</body>
+</html>
