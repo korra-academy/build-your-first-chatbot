@@ -30,6 +30,26 @@ Open `chatbot.html` in any text editor and find `BRAIN`. Each entry is:
 
 Add your own entry, save, refresh the browser. You just programmed a chatbot. Ideas: make it answer FAQs for your club or business, give it a personality, add an easter egg for your friends.
 
+## Teach it this: a two-rule quiz (worked example)
+
+A rules bot can't calculate, but it *can* quiz you — one rule asks the question, another recognises the answer. Add these two entries to `BRAIN`:
+
+```js
+{ keywords: ["quiz me", "quiz", "test me"],
+  replies: ["Quiz time! Capital of France? (Type your answer.)"] },
+
+{ keywords: ["paris"],
+  replies: ["Correct! 🎉 Now open the file and add a second question yourself.",
+            "Yes — Paris. You just saw how a 'conversation' can be two unconnected rules."] },
+```
+
+Save, refresh, type `quiz me`, then answer. Two things you just learned by doing:
+
+1. **Order matters.** The bot uses the *first* rule whose keyword appears in your message (look at the `for` loop in `reply()`), so put specific rules above general ones. If you had a rule for the single keyword `"quiz"` above the `"quiz me"` one, the longer phrase would never win — it would never even be checked.
+2. **Keywords are substrings.** `"paris"` also matches inside "com**paris**on", so the bot will shout "Correct!" at odd moments. That false-positive problem is the core weakness of keyword matching — and one reason LLMs, which read whole sentences, took over.
+
+The bot never actually knows a quiz is running — there's no state connecting the two rules. If you want it to only accept "paris" *after* asking the question, you need memory. The `userName` variable in the file is exactly that pattern; try adding a `quizAsked` variable the same way.
+
 ## Level up
 
 1. **More patterns** — add 10 entries covering a topic you know.
