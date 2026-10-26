@@ -50,6 +50,51 @@ Save, refresh, type `quiz me`, then answer. Two things you just learned by doing
 
 The bot never actually knows a quiz is running — there's no state connecting the two rules. If you want it to only accept "paris" *after* asking the question, you need memory. The `userName` variable in the file is exactly that pattern; try adding a `quizAsked` variable the same way.
 
+## Teach it this: a quiz that knows it's running (worked example)
+
+Last section's quiz had a flaw: the bot shouts "Correct!" at the word "paris" whenever it appears, question or no question. Fixing that needs **state** — a variable that survives from one message to the next. The file already does this once with `userName`; here is the same trick applied to the quiz.
+
+**Step 1 — give the bot a second memory slot.** Find `let userName = null;` and add a line under it:
+
+```js
+let quizAsked = false;   // true only between asking the question and hearing an answer
+```
+
+**Step 2 — swap the quiz replies for special tokens.** Change the two quiz rules in `BRAIN` so they return tokens instead of text, exactly like `"__REMEMBER_NAME__"` does:
+
+```js
+{ keywords: ["quiz me", "quiz", "test me"],
+  replies: ["__ASK_QUIZ__"] },
+
+{ keywords: ["paris"],
+  replies: ["__CHECK_QUIZ__"] },
+```
+
+**Step 3 — handle the tokens in `reply()`.** Directly under the `if (out === "__REMEMBER_NAME__") { ... }` block, add:
+
+```js
+if (out === "__ASK_QUIZ__") {
+  quizAsked = true;
+  out = "Quiz time! Capital of France? (Type your answer.)";
+}
+if (out === "__CHECK_QUIZ__") {
+  if (quizAsked) {
+    quizAsked = false;                       // reset, or the bot stays stuck in quiz mode forever
+    out = "Correct! 🎉 Now add a second question — you'll need a second variable, or a counter.";
+  } else {
+    out = "Paris is lovely, but I haven't asked you anything. Type 'quiz me' first.";
+  }
+}
+```
+
+Save, refresh, and try it both ways: type `paris` cold (polite refusal), then `quiz me` followed by `paris` (correct). Three things you just learned by doing:
+
+1. **State turns reactions into a conversation.** Without `quizAsked`, every message is judged on its own. With it, the bot's answer depends on what happened *before* — that is the whole difference between a lookup table and a dialogue.
+2. **Tokens keep the brain and the logic apart.** `BRAIN` stays a plain list anyone can edit; the "thinking" lives in `reply()`. When a reply needs code to run, return a token and handle it there. Every rule-based bot framework you will ever meet uses some version of this split.
+3. **State you never reset is a bug.** Delete the `quizAsked = false;` line and the bot accepts "paris" forever after the first quiz. Forgetting to reset is the classic beginner chatbot bug — and the reason the `userName` memory is deliberately wiped by a page refresh.
+
+One more thing worth knowing: LLM chatbots like Claude or ChatGPT solve this differently. The model itself remembers nothing between calls — the app re-sends the whole conversation every time, and the model reads it to work out what state it's in. Your one boolean is the hand-made version of that context window.
+
 ## Level up
 
 1. **More patterns** — add 10 entries covering a topic you know.
